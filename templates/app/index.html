@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+  {% load static %}
+  <head>
+    <!-- ==================== Meta Information ==================== -->
+    <meta charset="UTF-8" />
+    <title>PDFChatAnnotator</title>
+
+    <!-- ==================== Stylesheets ==================== -->
+    <link rel="stylesheet" href="{% static 'app/style.css' %}" />
+
+    <!-- ==================== JavaScript Dependencies ==================== -->
+    <script src="{% static 'app/js/jquery-3.6.0.min.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.min.js"></script>
+
+    <!-- ==================== Global Variables ==================== -->
+    <script>
+      // API Endpoints
+      var submitCardUrl = "{% url 'submitCard' %}";
+      var receiveMessageUrl = "{% url 'receiveMessage' %}";
+      var fileHandleUrl = "{% url 'fileHandle' %}";
+
+      // Icon Paths
+      var inputTagDelIcon = "{% static 'app/icon/tag-del.png' %}";
+      var submitCardCloseIcon = "{% static 'app/icon/close.png' %}";
+      var submitCardDelIcon = "{% static 'app/icon/del.png' %}";
+      var submitCardCollectIcon = "{% static 'app/icon/unstore.png' %}";
+      var submitCardInputDelIcon = "{% static 'app/icon/input-del.png' %}";
+      var submitCardInputAddIcon = "{% static 'app/icon/input-add.png' %}";
+      var submitCardInputYesIcon = "{% static 'app/icon/input-yes.png' %}";
+      var submitCardInputNoIcon = "{% static 'app/icon/input-no.png' %}";
+      var submitCardTickIcon = "{% static 'app/icon/tick.png' %}";
+      var submitCardImgRootPath = "{% static 'app/loadedImgs/' %}";
+    </script>
+
+    <!-- ==================== Application Scripts ==================== -->
+    <script src="{% static 'app/js/showPDF.js' %}"></script>
+    <script src="{% static 'app/js/scripts.js' %}"></script>
+    <script src="{% static 'app/js/examplePrompt.js' %}"></script>
+    <script src="{% static 'app/js/displayImg.js' %}"></script>
+    <script src="{% static 'app/js/textWindow.js' %}"></script>
+    <script src="{% static 'app/js/formSubmit.js' %}"></script>
+    <script src="{% static 'app/js/messageSend.js' %}"></script>
+  </head>
+
+  <body>
+    <!-- ==================== Header Section ==================== -->
+    <header class="header">
+      <h1 id="system-name">PDFChatAnnotator</h1>
+
+      <!-- File Upload Section -->
+      <div class="file-space">
+        <div class="form-container">
+          <img src={% static 'app/icon/file-upload.png' %}
+          id="form-container-file-upload-icon">
+          <p id="form-container-file-name-display"></p>
+          <form enctype="multipart/form-data" method="post" id="fileForm">
+            {% csrf_token %}
+            <label for="file">File: </label>
+            <input type="file" name="file" id="file" accept="application/pdf" />
+            <button type="submit">Submit</button>
+          </form>
+        </div>
+
+        <!-- File Processing Controls -->
+        <div class="form-process-space">
+          处理页数：
+          <div class="tooltip-container">
+            <input value="1" id="file-space-pdf-length" />
+            <span class="tooltip-text"
+              >从 PDF 预览窗口的当前页开始，连续处理的页数</span
+            >
+          </div>
+          {% comment %} 文件处理按钮，暂时隐藏
+          <div id="file-space-lang">
+            <select id="langSelect">
+              <option value="ch_sim">中文简体</option>
+              <option value="ch_tra">中文繁体</option>
+            </select>
+          </div>
+          <div
+            class="file-space-file-process-icon-space"
+            onclick="onClickFileHandleBtn()"
+          >
+            <div class="loader" style="display: none">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <img src={% static 'app/icon/file-process.png' %}
+            id="file-space-file-process-icon"> {% endcomment %}
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ==================== PDF Preview Section ==================== -->
+    <div id="pdf-preview-container">
+      <div id="pdf-preview">
+        {% if uploadedFile %}
+        <script>
+          // Convert base64 file content to File object
+          const base64FileContent = '{{ uploadedFile|safe }}';
+          const decodedFileContent = atob(base64FileContent);
+          const arrayBuffer = new ArrayBuffer(decodedFileContent.length);
+          const uint8Array = new Uint8Array(arrayBuffer);
+
+          for (let i = 0; i < decodedFileContent.length; i++) {
+            uint8Array[i] = decodedFileContent.charCodeAt(i);
+          }
+
+          const blob = new Blob([uint8Array], { type: 'application/pdf' });
+          const file = new File([blob], '{{ uploadedFile.name }}', { type: 'application/pdf' });
+
+          // Initialize PDF viewer
+          pdfObject.setCurrentPage = parseInt({{ pageNum }})
+          pdfObject.setPdf = file
+          showPDF();
+        </script>
+        {% endif %}
+      </div>
+
+      <!-- PDF Navigation Controls -->
+      <div id="pdf-preview-tool-box">
+        <img src={% static 'app/icon/zoomin.png' %} id="pdf-preview-zoom-in-btn"
+        onclick="clickZoomInButton()">
+        <span></span>
+        <img src={% static 'app/icon/zoomout.png'%}
+        id="pdf-preview-zoom-out-btn" onclick="clickZoomOutButton()">
+      </div>
+
+      <!-- Page Navigation -->
+      <div id="pdf-pageNum-input">
+        <img src={% static 'app/icon/left-page.png' %}
+        id="pdf-pageNum-left-btn">
+        <input value="1" id="pdf-pageNum-current" />
+        <img src={% static 'app/icon/right-page.png' %}
+        id="pdf-pageNum-right-btn">
+      </div>
+    </div>
+
+    <!-- ==================== Content Display Section ==================== -->
+    <div id="content-display">
+      <!-- Text Display Area -->
+      <div id="text-display">
+        {% if uploadedFile %}
+        <div class="text-ask-window">
+          <div class="text-ask-window-content">
+            <div class="text-ask-window-hint">{{ askMessage }}</div>
+          </div>
+          <div class="text-ask-window-avatar">Me</div>
+        </div>
+        {% endif %} {% if uploadedFile %}
+        <script>
+          let info;
+          var pageImgList = {{ pageImgList |safe}};
+          {% for model in modelOuputs %}
+              {% with forloop.counter0 as index %}
+                  var pagetmp = {{ model |safe}};
+                  pagetmp.forEach((tmp)=>{
+                      info = new Array();
+                      for(var key in tmp){
+                          info[key] = {'name': key, 'content': tmp[key]};
+                      }
+                      addResponseBox(info, pageImgList[{{ index }}]);
+                  })
+              {% endwith %}
+          {% endfor %}
+        </script>
+        {% endif %}
+      </div>
+
+      <!-- Tag Management 暂时隐藏 -->
+      {% comment %}
+      <div class="text-send-message-tag-box">
+        <div class="text-send-message-tag">
+          <textarea oninput="autoResize(this)"></textarea>
+          <img src={% static 'app/icon/tag-del.png' %} class="tag-del"
+          onclick="removeTag(this)">
+        </div>
+      </div>
+      {% endcomment %}
+
+      <!-- Message Input Area -->
+      <div class="text-send-message-box">
+        <div class="text-send-message-input-box">
+          {% comment %}
+          <div class="text-send-message-box-tag-field">
+            <img src={% static 'app/icon/addTag.png' %} id="addTagIcon"
+            onclick="onClickAddTagIcon()">
+          </div>
+          {% endcomment %}
+          <textarea
+            class="text-send-message-box-input-field"
+            placeholder="Enter Message"
+            rows="1"
+            oninput="adjustChatContainerHeight()"
+          ></textarea>
+        </div>
+        <button class="text-send-message-send-button">
+          <img src={% static 'app/icon/send.png' %}
+          id="text-send-message-send-button-img">
+        </button>
+      </div>
+    </div>
+  </body>
+</html>

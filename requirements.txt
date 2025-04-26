@@ -1,0 +1,14 @@
+Django===4.2.4
+pandas==2.0.3
+openpyxl==3.1.5
+pymysql==1.1.0
+PyMuPDF==1.22.5  # fitz
+frontend
+# Windows: pip install pyreadline3
+# Mac: pip install readline
+opencv-python==4.8.0.74
+easyocr==1.7.0
+opencc==1.1.7
+cryptography==41.0.3
+openai==1.58.1
+numpy==1.25.2

@@ -1,0 +1,19 @@
+# idea
+/.idea
+*.pyc
+**/.DS_Store
+**/*.pyc
+**/__pycache__
+
+# misc
+.DS_Store
+*.pem
+
+# pdf files
+/pdfFiles
+
+# img
+/static/app/dataset
+/static/app/extracted_text
+/static/app/loadedImgs
+/static/app/pdf_image
