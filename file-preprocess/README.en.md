@@ -41,6 +41,7 @@ Modify the following variables based on your own setup:
 
 | Variable Name        | Example Value         | Description                                                              |
 | -------------------- | --------------------- | ------------------------------------------------------------------------ |
+| `use_gpu`            | `True`                | Whether to use GPU: Set to `True` for yes, set to `False` for no         |
 | `pdf_store_dir`      | `"pdfFiles/my_paper"` | Path to the folder you just created                                      |
 | `uploaded_file_name` | `"myfile.pdf"`        | Name of the PDF file you want to process                                 |
 | `pageNum`            | `1`                   | Starting page number (starts from 1)                                     |

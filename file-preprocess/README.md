@@ -41,6 +41,7 @@ file-preprocess/preprocess.py
 
 | 变量名               | 示例值                | 说明                                          |
 | -------------------- | --------------------- | --------------------------------------------- |
+| `use_gpu`            | `True`                | 是否使用 GPU：是设为 `True`，否设为 `False`   |
 | `pdf_store_dir`      | `"pdfFiles/my_paper"` | 设置为你刚刚创建的文件夹路径                  |
 | `uploaded_file_name` | `"myfile.pdf"`        | 设置为你要处理的 PDF 文件名                   |
 | `pageNum`            | `1`                   | 设置处理的起始页码（从 1 开始）               |

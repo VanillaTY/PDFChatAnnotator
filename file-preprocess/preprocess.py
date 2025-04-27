@@ -6,9 +6,16 @@ import numpy as np
 import easyocr
 import time
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-
 # ==================== 配置文件参数 ====================
+# 是否使用GPU进行OCR识别
+# True: 使用GPU进行OCR识别
+# False: 使用CPU进行OCR识别
+use_gpu = True
+
+# 如果使用GPU，设置CUDA设备
+if use_gpu:
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
 # PDF文件存储目录
 # 请确保此目录存在，并且包含要处理的PDF文件
 # 如果是windows系统，请使用反斜杠（\）
@@ -17,7 +24,7 @@ pdf_store_dir = "./pdfFiles/my_paper"
 # 要处理的PDF文件名
 # 请将此处改为你要处理的PDF文件名
 # 注意：文件名需要包含.pdf后缀
-uploaded_file_name = "（勿外传）6.2024-山东馆藏文物精品大系·青铜器卷·秦汉篇.pdf"
+uploaded_file_name = "Catalog.pdf"
 
 # PDF文件完整路径
 # 此路径由pdf_store_dir和uploaded_file_name自动组合生成
@@ -303,8 +310,8 @@ def detectyTextFromPDFPage(page_image, lang):
     返回:
         final_result: 识别出的文本内容
     """
-    # 初始化OCR阅读器
-    reader = easyocr.Reader(lang, gpu=True)
+    # 初始化OCR阅读器，根据use_gpu参数决定是否使用GPU
+    reader = easyocr.Reader(lang, gpu=use_gpu)
     # 使用OCR识别文本
     result = reader.readtext(page_image, paragraph=True,
                              rotation_info=[90, 180, 270])
@@ -404,6 +411,7 @@ def preprocessFile():
     doc = fitz.open(uploaded_file_path)
 
     # 初始化变量
+    global endPageNum  # 声明使用全局变量
     pageImgList = []
     startPageNum = int(pageNum) - 1  # 转换为0-based索引
     endPageNum = int(endPageNum) - 1  # 转换为0-based索引
