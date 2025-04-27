@@ -4,7 +4,15 @@
 
 ## 📌 Before You Start
 
-- **This preprocessing process requires a GPU**. Please make sure your current environment supports CUDA and the necessary GPU drivers are installed.
+- The currently supported catalog types are:
+
+  - Each page's images are only associated with the text content on that page (a).
+  - All images that appear before the start of new page text are associated with the text content on the current page (b).
+  - In a page where there are multiple image-text matching pairs, each image is associated with the text content below it (c). ⚠️ Due to the high correlation with the inherent characteristics of the catalog type, it is currently not open source.
+
+    ![Catalog Types](../public/images/catalog-type.png)
+
+- **This preprocessing process requires a GPU**. Please make sure your current environment supports CUDA and the necessary GPU drivers are installed. The program also supports debugging on the CPU, but it is extremely slow without using the GPU, and is not recommended.
 - If you have **multiple GPUs**, specify which one to use by setting this in the `preprocess.py` file:
 
 ```python
