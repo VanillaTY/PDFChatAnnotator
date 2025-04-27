@@ -29,6 +29,16 @@ This project is based on our research paper published at ACM IUI 2024:
 
 ![Interactive Annotation](./public/images/interactive-annotation.png)
 
+## 📌 Before You Start
+
+- The currently supported catalog types are:
+
+  - Each page's images are only associated with the text content on that page (a).
+  - All images that appear before the start of new page text are associated with the text content on the current page (b).
+  - In a page where there are multiple image-text matching pairs, each image is associated with the text content below it (c). ⚠️ Due to the high correlation with the inherent characteristics of the catalog type, it is currently not open source.
+
+    ![Catalog Types](./public/images/catalog-type.png)
+
 ## ⚙️ Installation
 
 ### Prerequisites
