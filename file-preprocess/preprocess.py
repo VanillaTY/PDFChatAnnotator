@@ -262,25 +262,46 @@ def savePDFasImage(uploaded_file_name, page, page_img_save_dir):
         page_image: 原始分辨率图像路径
         page_image_6x: 6倍分辨率图像路径
     """
-    file_name = uploaded_file_name[:-4]
-    # 生成6倍分辨率的图像
-    zoom_x = 6.0
-    zoom_y = 6.0
-    mat = fitz.Matrix(zoom_x, zoom_y)
-    pix = page.get_pixmap(matrix=mat)
-    page_image_6x = "%s/%s-page-%i-%s.png" % (
-        page_img_save_dir, file_name, page.number, '6x')
-    pix.save(page_image_6x)
+    try:
+        # 确保保存目录存在
+        os.makedirs(page_img_save_dir, exist_ok=True)
 
-    # 生成原始分辨率的图像
-    zoom_x = 1.0
-    zoom_y = 1.0
-    mat = fitz.Matrix(zoom_x, zoom_y)
-    pix = page.get_pixmap(matrix=mat)
-    page_image = "%s/%s-page-%i-%s.png" % (
-        page_img_save_dir, file_name, page.number, '1x')
-    pix.save(page_image)
-    return page_image, page_image_6x
+        file_name = uploaded_file_name[:-4]
+        # 生成6倍分辨率的图像
+        zoom_x = 6.0
+        zoom_y = 6.0
+        mat = fitz.Matrix(zoom_x, zoom_y)
+        pix = page.get_pixmap(matrix=mat)
+        page_image_6x = "%s/%s-page-%i-%s.png" % (
+            page_img_save_dir, file_name, page.number, '6x')
+        pix.save(page_image_6x)
+
+        # 验证6x图像是否成功保存
+        if not os.path.exists(page_image_6x):
+            raise Exception(f"Failed to save 6x image at {page_image_6x}")
+
+        # 生成原始分辨率的图像
+        zoom_x = 1.0
+        zoom_y = 1.0
+        mat = fitz.Matrix(zoom_x, zoom_y)
+        pix = page.get_pixmap(matrix=mat)
+        page_image = "%s/%s-page-%i-%s.png" % (
+            page_img_save_dir, file_name, page.number, '1x')
+        pix.save(page_image)
+
+        # 验证原始分辨率图像是否成功保存
+        if not os.path.exists(page_image):
+            raise Exception(f"Failed to save 1x image at {page_image}")
+
+        return page_image, page_image_6x
+    except Exception as e:
+        print(f"Error in savePDFasImage: {str(e)}")
+        # 清理可能部分保存的文件
+        if 'page_image' in locals() and os.path.exists(page_image):
+            os.remove(page_image)
+        if 'page_image_6x' in locals() and os.path.exists(page_image_6x):
+            os.remove(page_image_6x)
+        raise
 
 
 def deletePDFImage(page_image, page_image_6x):
@@ -310,11 +331,27 @@ def detectyTextFromPDFPage(page_image, lang):
     返回:
         final_result: 识别出的文本内容
     """
+    # 验证图像文件是否存在
+    if not os.path.exists(page_image):
+        print(f"Error: Image file not found at {page_image}")
+        return ""
+
+    # 读取图像并验证
+    img = cv2.imread(page_image)
+    if img is None:
+        print(f"Error: Failed to read image file at {page_image}")
+        return ""
+
     # 初始化OCR阅读器，根据use_gpu参数决定是否使用GPU
     reader = easyocr.Reader(lang, gpu=use_gpu)
-    # 使用OCR识别文本
-    result = reader.readtext(page_image, paragraph=True,
-                             rotation_info=[90, 180, 270])
+
+    try:
+        # 使用OCR识别文本
+        result = reader.readtext(page_image, paragraph=True,
+                                 rotation_info=[90, 180, 270])
+    except Exception as e:
+        print(f"Error during OCR processing: {str(e)}")
+        return ""
 
     if lang[0] == 'ch_tra':
         print('ch_tra')
