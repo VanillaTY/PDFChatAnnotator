@@ -189,8 +189,17 @@ def detectImgFromPDFPage(uploaded_file_name, page, page_image_origin, page_image
     zoom_y = 6.0  # 垂直缩放比例
 
     # 读取图像
-    zoomed_image = cv2.imread(page_image)
-    image = cv2.imread(page_image_origin)
+    zoomed_image = cv2.imdecode(np.fromfile(
+        page_image, dtype=np.uint8), cv2.IMREAD_COLOR)
+    if zoomed_image is None:
+        print(f"Error: Failed to read zoomed image at {page_image}")
+        return [], []
+
+    image = cv2.imdecode(np.fromfile(
+        page_image_origin, dtype=np.uint8), cv2.IMREAD_COLOR)
+    if image is None:
+        print(f"Error: Failed to read original image at {page_image_origin}")
+        return [], []
 
     # 使用高斯滤波平滑图像以减少噪音
     blurred = cv2.GaussianBlur(image, (5, 5), 0)
@@ -272,8 +281,8 @@ def savePDFasImage(uploaded_file_name, page, page_img_save_dir):
         zoom_y = 6.0
         mat = fitz.Matrix(zoom_x, zoom_y)
         pix = page.get_pixmap(matrix=mat)
-        page_image_6x = "%s/%s-page-%i-%s.png" % (
-            page_img_save_dir, file_name, page.number, '6x')
+        page_image_6x = os.path.join(
+            page_img_save_dir, f"{file_name}-page-{page.number}-6x.png")
         pix.save(page_image_6x)
 
         # 验证6x图像是否成功保存
@@ -285,8 +294,8 @@ def savePDFasImage(uploaded_file_name, page, page_img_save_dir):
         zoom_y = 1.0
         mat = fitz.Matrix(zoom_x, zoom_y)
         pix = page.get_pixmap(matrix=mat)
-        page_image = "%s/%s-page-%i-%s.png" % (
-            page_img_save_dir, file_name, page.number, '1x')
+        page_image = os.path.join(
+            page_img_save_dir, f"{file_name}-page-{page.number}-1x.png")
         pix.save(page_image)
 
         # 验证原始分辨率图像是否成功保存
