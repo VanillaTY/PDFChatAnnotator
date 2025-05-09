@@ -152,6 +152,42 @@ pdf_store_dir = r"C:\Users\Desktop\PDFChatAnnotator-main\file-preprocess\pdfFile
 3. 去 file-preprocess/app/extracted_text 目录下，删掉报错的 JSON 文件
 4. 去 file-preprocess/app/extracted_text 目录下的方法：VSCode 左侧文件列表找到 static，一路往下找
 
+### 问题 6：JSON 文件内容为空
+
+**问题描述**：预处理生成的 JSON 文件中 `textList` 内容为 `[""]`，表示没有成功提取出文字内容。
+
+**解决方案**：
+
+1. 重新运行 preprocess.py 文件
+2. 观察运行过程中的提示信息，特别关注类似以下格式的输出：
+   ```
+   passed text(coordinates):  95 1356 126 409 area:  356863 2 鬲 商代早期 通高23.7 .口径14.8厘米 .......
+   ```
+3. 如果出现 "passed text(coordinates)" 提示，说明文本被误判为页眉页脚而被过滤掉了
+4. 解决方法：
+   - 使用最新版本的 preprocess.py 文件
+   - 调整以下参数：
+     - `left_threshold`：设置为小于 passed text 坐标中的第一个值
+     - `right_threshold`：设置为大于 passed text 坐标中的第二个值
+   - 例如，对于坐标 "95 1356 126 409"：
+     - `left_threshold` 可设置为 90
+     - `right_threshold` 可保持原值
+
+### 问题 7：OCR 处理错误
+
+**错误信息**：`Error during OCR processing: module 'PIL.Image' has no attribute 'ANTIALIAS'`
+
+**解决方案**：
+
+1. 激活 conda 环境：
+   ```
+   conda activate pdfannotator
+   ```
+2. 安装指定版本的 Pillow：
+   ```
+   pip install Pillow==9.5.0
+   ```
+
 ## 服务器运行问题
 
 ### 问题 1：使用 python manage.py runserver 启动服务器失败
