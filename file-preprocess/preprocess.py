@@ -49,6 +49,15 @@ isChSim = True
 # ['ch_sim', 'en']: 简体中文和英文
 # ['ch_tra', 'en']: 繁体中文和英文
 lang = ['ch_sim', 'en'] if isChSim else ['ch_tra', 'en']
+
+# 文本过滤参数
+# 文本区域的坐标阈值，用于过滤边缘文本
+# 如果文本区域的左边界小于等于left_threshold或右边界大于等于right_threshold，则会被过滤掉
+left_threshold = 90  # 左边界阈值
+right_threshold = 2800  # 右边界阈值
+# 文本区域的面积阈值，用于过滤小文本
+# 如果文本区域的面积小于等于area_threshold，则会被过滤掉
+area_threshold = 150000  # 面积阈值
 # ==================== 配置文件参数结束 ====================
 
 extractedPDFPath = ''
@@ -129,13 +138,34 @@ def save_text_and_related_img_to_json(file_name, current_page_number, textList, 
         textList: 文本列表
         relatedImgList: 相关图片列表
     """
+    # 处理文本编码
+    processed_textList = []
+    for text in textList:
+        # 尝试使用不同的编码方式处理文本
+        try:
+            # 首先尝试使用utf-8解码
+            if isinstance(text, bytes):
+                text = text.decode('utf-8')
+            # 如果文本包含乱码，尝试使用gbk解码
+            if any(ord(c) > 0x4e00 and ord(c) < 0x9fff for c in text):
+                text = text.encode('gbk', errors='ignore').decode(
+                    'gbk', errors='ignore')
+            processed_textList.append(text)
+        except Exception as e:
+            print(f"文本编码处理错误: {str(e)}")
+            processed_textList.append(text)
+
     data = {
         "file_name": file_name,
         "page": current_page_number,
-        "textList": textList,
+        "textList": processed_textList,
         "thisTextImgList": relatedImgList,
     }
-    with open(extractedPDFPath, "a") as json_file:
+
+    # 确保目录存在
+    os.makedirs(os.path.dirname(extractedPDFPath), exist_ok=True)
+
+    with open(extractedPDFPath, "a", encoding='utf-8') as json_file:
         json.dump(data, json_file, ensure_ascii=False)
         json_file.write(",")
 
@@ -144,14 +174,20 @@ def set_json_ending():
     """
     设置JSON文件的结束格式，删除最后一个逗号并添加右方括号
     """
-    with open(extractedPDFPath, "r") as json_file:
-        content = json_file.read()
+    try:
+        with open(extractedPDFPath, "r", encoding='utf-8') as json_file:
+            content = json_file.read()
 
-    if content:
-        content = content[:-1]
+        if content:
+            content = content[:-1]
 
-    with open(extractedPDFPath, "w") as json_file:
-        json_file.write(content + "]")
+        with open(extractedPDFPath, "w", encoding='utf-8') as json_file:
+            json_file.write(content + "]")
+    except Exception as e:
+        print(f"设置JSON文件结束格式时出错: {str(e)}")
+        # 如果文件为空或损坏，创建一个新的空JSON数组
+        with open(extractedPDFPath, "w", encoding='utf-8') as json_file:
+            json_file.write("[]")
 
 
 def crop_padding_with_offset(image, padding=10):
@@ -368,11 +404,17 @@ def detectyTextFromPDFPage(page_image, lang):
 
     filtered_results = []
     for (coordinate, text) in result:
-        # 过滤 margin:
-        # [[113, 393], [173, 393], [173, 1152], [113, 1152]] 鎌邕咄血虱蘚吊普癬8邕咄帶咄
-        # [[3005, 4145], [3032, 4145], [3032, 4183], [3005, 4183]] 5
-        # [2853, 119], [3066, 119], [3066, 180], [2853, 180]] 食器:鼎
-        # print(coordinate, text)
+        # 处理文本编码
+        try:
+            # 如果文本是bytes类型，先解码
+            if isinstance(text, bytes):
+                text = text.decode('utf-8')
+            # 尝试使用gbk编码处理中文
+            text = text.encode('gbk', errors='ignore').decode(
+                'gbk', errors='ignore')
+        except Exception as e:
+            print(f"文本编码处理错误: {str(e)}")
+            continue
 
         # 获取文本区域的坐标
         left = coordinate[0][0]
@@ -387,12 +429,12 @@ def detectyTextFromPDFPage(page_image, lang):
         area = width * height
 
         # 过滤边缘文本和过小的文本区域
-        if left <= 300 or right <= 300 or left >= 2800 or right >= 2800:
+        if left <= left_threshold or right >= right_threshold:
             print("passed text(coordinates): ", left,
                   right, top, bottom, "area: ", area, text)
             pass
         else:
-            if (area <= 150000):
+            if (area <= area_threshold):
                 print("passed text(area): ", left, right,
                       top, bottom, "area: ", area, text)
             else:
